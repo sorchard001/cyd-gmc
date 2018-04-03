@@ -1,0 +1,9 @@
+*.swp
+*.bin
+*.lst
+tags
+*.vdk
+*.cas
+*.wav
+*.$$$
+
