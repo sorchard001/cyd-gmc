@@ -274,6 +274,7 @@ return_c\1	ldu	#$0000
 setarp_c	macro
 clrarp_c\1	ldx	#null_arp
 		clra
+		sta	c\1arp
 		bra	10F
 setarp_c\1	pulu	a,x
 10		sta	c\1arptime

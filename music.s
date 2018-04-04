@@ -249,28 +249,23 @@ lead_arp
 	_setarp		1,arp1
 	fcb		a4,n1*2
 	fcb		a4,n1*1
-
 	fcb		a4,n1*2
 	_setarp		2,arp3
 	fcb		a4,n1*1
 	fcb		a4,n1*3
-
 	_setarp		2,arp2
 	fcb		a4,n1*1
 	fcb		a4,n1*3
-
 
 	_setarp		1,arp4
 	fcb		g4,n1*2
 	fcb		g4,n1*1
 	fcb		g4,n1*2
-	fcb		g4,n1*1
-
 	_setarp		2,arp5
+	fcb		g4,n1*1
 	fcb		g4,n1*2
 	fcb		g4,n1*1
 	fcb		g4,n1*3
-
 	_setarp		2,arp2
 	fcb		a4,n1*1
 	fcb		a4,n1*3
