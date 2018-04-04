@@ -65,7 +65,8 @@ patch_9
 	fdb	envelope_5,envelope_6
 
 ; basic note length
-n1	equ	6
+n1	equ	6	; PAL
+;n1	equ	7	; NTSC
 
 
 tune0_c1
@@ -173,7 +174,7 @@ tune0_c2
 	_call	bass_2
 	_next
 
-1	
+1
 	_setpatch 2
 	_loop	4
 	_call	lead_main
@@ -417,7 +418,7 @@ drum_0
 	_return
 
 
-drum_1	
+drum_1
 	m_kick	n1*2
 	m_hhat	n1
 	m_hhat	n1
@@ -434,7 +435,7 @@ drum_1
 
 	_return
 
-drum_2	
+drum_2
 	m_kick	n1*2
 	m_hhat	n1
 	m_hhat	n1
