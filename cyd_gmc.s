@@ -68,6 +68,7 @@ c\1env_r	equ	*+1
 chan_write_hw	macro
 c\1freq		equ	*+1
 		ldd	#1
+		;ldd 	#100*16
 		lsrb
 		lsrb
 		lsrb
@@ -79,14 +80,39 @@ c\1freq		equ	*+1
 		sta	$ff41
 c\1wavevol	equ	*+1
 		subb	#1
+	if \1 == 1
+		stb	c1vol
+	else
 		andb	#15
 		orb	#\3
 		stb	$ff41
+	endif
 		endm
 
 		chan_write_hw	1,$80,$90
 		chan_write_hw	2,$a0,$b0
 		chan_write_hw	3,$c0,$f0
+
+1
+c1phase		equ	*+1
+		ldd	#0
+c1sfreq		equ	*+1
+		addd	#260
+		std	c1phase
+c1duty		equ	*+1
+		adda	#128
+		rorb
+		sex
+c1vol		equ	*+1
+		ora	#0
+		anda	#$f
+		ora	#$90
+		sta	$ff41
+
+		lda	$ff03
+		bpl	1b
+		lda	$ff02
+
 
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -428,8 +454,6 @@ start
 
 
 1		jsr	play_frag
-		sync
-		lda	$ff02
 		bra	1B
 
 null_arp	fcb	0
