@@ -5,26 +5,13 @@
 	include	"cyd_macros.s"
 
 
+envelope_0	fcb 1,0
 
 envelope_1	fcb 12,16,0
 envelope_1b	fcb 15,14,13,12,0
 
-envelope_2	fcb 14,0
-envelope_2b	equ *-1
-
-envelope_3	fcb 16,0
-envelope_3b	fcb 15,14,13,12,1,0
-envelope_3c	fcb 15,14,13,12,11,0
-
-envelope_4	fcb 12,0
-envelope_4b	fcb 11,10,1,0
-
-envelope_0	equ *-2
-
-envelope_5	fcb 12,13,14,15,0
-envelope_5b	fcb 14,12,10,9,0
-
-envelope_6	fcb 13,0
+envelope_2	fcb 10,11,12,13,0
+envelope_2b	fcb 12,11,10,9,0
 
 patch_table
 
@@ -32,37 +19,11 @@ patch_0
 	fcb	1
 	fdb	envelope_0,envelope_0
 patch_1
-	fcb	6
-	fdb	envelope_1,envelope_1b
-patch_2
 	fcb	10
 	fdb	envelope_1,envelope_1b
-patch_3
-	fcb	4
+patch_2
+	fcb	6
 	fdb	envelope_2,envelope_2b
-
-; kick
-patch_4
-	fcb	6
-	fdb	envelope_3,envelope_3b
-; snare
-patch_5
-	fcb	6
-	fdb	envelope_3,envelope_3c
-; hhat
-patch_6
-	fcb	2
-	fdb	envelope_4,envelope_4b
-
-patch_7
-	fcb	6
-	fdb	envelope_5,envelope_5b
-patch_8
-	fcb	3
-	fdb	envelope_1,envelope_2
-patch_9
-	fcb	6
-	fdb	envelope_5,envelope_6
 
 ; basic note length
 n1	equ	6	; PAL
@@ -76,16 +37,78 @@ tune0_c1
 
 	_setpatch	1
 
-1	fcb	b2,n1*8
+1
+	_call	p1
+	_call	p2
+	_call	p1
+	_call	p3
 
 	_jump 1b
+
+
+p1
+	fcb	b2,n1*4
+	fcb	b2,n1*2
+	fcb	b2,n1*2
+	fcb	b2,n1*2
+	fcb	b2,n1*2
+	fcb	c3,n1*2
+	fcb	b2,n1*2
+	_return
+
+p2
+	fcb	b2,n1*4
+	fcb	b2,n1*2
+	fcb	b2,n1*2
+	fcb	b2,n1*2
+	fcb	c3,n1*2
+	fcb	d3,n1*2
+	fcb	b2,n1*2
+	_return
+
+p3
+	fcb	b2,n1*4
+	fcb	b2,n1*2
+	fcb	b2,n1*2
+	fcb	c3,n1*2
+	fcb	b2,n1*2
+	fcb	e3,n1*2
+	fcb	b2,n1*2
+	_return
+
 
 
 tune0_c2
 
-1	fcb	silence,n1*16
-	_jump 1b
+1	;fcb	silence,n1*16
+	;_jump 1b
 
+	_setpatch	2
+
+1	_silence	n1*16
+	_silence	n1*16
+	_silence	n1*16
+	_silence	n1*16
+1
+	fcb	e6,n1*2
+	fcb	b5,n1*2
+	fcb	b5,n1*2
+	fcb	d6,n1*2
+	fcb	b5,n1*2
+	fcb	b5,n1*2
+	fcb	c6,n1*2
+	fcb	b5,n1*2
+
+	fcb	e6,n1*2
+	fcb	b5,n1*2
+	fcb	b5,n1*2
+	fcb	d6,n1*2
+	fcb	b5,n1*2
+	fcb	b5,n1*2
+	fcb	a5,n1*2
+	fcb	c6,n1*2
+
+	_jump 1b
 
 
 

@@ -68,7 +68,6 @@ c\1env_r	equ	*+1
 chan_write_hw	macro
 c\1freq		equ	*+1
 		ldd	#1
-		;ldd 	#100*16
 		lsrb
 		lsrb
 		lsrb
@@ -97,7 +96,7 @@ c\1wavevol	equ	*+1
 c1phase		equ	*+1
 		ldd	#0
 c1sfreq		equ	*+1
-		addd	#260
+		addd	#341*0.5
 		std	c1phase
 c1duty		equ	*+1
 		adda	#128
@@ -113,6 +112,22 @@ c1vol		equ	*+1
 		bpl	1b
 		lda	$ff02
 
+
+		lda	c1duty
+c1duty_rate	equ	*+1
+		adda	#1
+c1duty_cond1	equ	*+1
+		cmpa	#$c0
+		bls	2f
+		neg	c1duty_rate
+c1duty_cond2	equ	*+1
+		ldd	#$4024
+		ldx	c1duty_cond1
+		stx	c1duty_cond2
+		std	c1duty_cond1
+		bra	1f
+2		sta	c1duty
+1
 
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
