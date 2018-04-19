@@ -9,10 +9,14 @@
 
 		include	"dragonhw.s"
 
+; address of SN76489 in GMC
+reg_sn76489	equ	$ff41
+
 ; -----------------------------------------------------------------------
 		org	$e00
 
 ftable		include	"ftable.s"
+fstable		include	"ftable_s.s"
 
 ; -----------------------------------------------------------------------
 
@@ -73,10 +77,10 @@ c\1freq		equ	*+1
 		lsrb
 		lsrb
 		orb	#\2
-		stb	$ff41
+		stb	reg_sn76489
 		anda	#$3f
 		ldb	#16
-		sta	$ff41
+		sta	reg_sn76489
 c\1wavevol	equ	*+1
 		subb	#1
 	if \1 == 1
@@ -84,7 +88,7 @@ c\1wavevol	equ	*+1
 	else
 		andb	#15
 		orb	#\3
-		stb	$ff41
+		stb	reg_sn76489
 	endif
 		endm
 
@@ -94,22 +98,22 @@ c\1wavevol	equ	*+1
 
 1
 c1phase		equ	*+1
-		ldd	#0
+		ldd	#0		; 3
 c1sfreq		equ	*+1
-		addd	#341*0.5
-		std	c1phase
+		addd	#0		; 4
+		std	c1phase		; 5
 c1duty		equ	*+1
-		adda	#128
-		rorb
-		sex
+		adda	#$30		; 2
+		rorb			; 2
+		sex			; 2
 c1vol		equ	*+1
-		ora	#0
-		anda	#$f
-		ora	#$90
-		sta	$ff41
+		ora	#0		; 2
+		anda	#$f		; 2
+		ora	#$90		; 2
+		sta	reg_sn76489	; 5
 
-		lda	$ff03
-		bpl	1b
+		lda	$ff03		; 5
+		bpl	1b		; 3 (37)
 		lda	$ff02
 
 
@@ -117,11 +121,11 @@ c1vol		equ	*+1
 c1duty_rate	equ	*+1
 		adda	#1
 c1duty_cond1	equ	*+1
-		cmpa	#$c0
+		cmpa	#$60
 		bls	2f
 		neg	c1duty_rate
 c1duty_cond2	equ	*+1
-		ldd	#$4024
+		ldd	#$0424
 		ldx	c1duty_cond1
 		stx	c1duty_cond2
 		std	c1duty_cond1
@@ -210,8 +214,15 @@ c\1arptime	equ	*+1
 		stb	c\1arptimer
 		lsla
 		ldx	#ftable+128
-		ldd	a,x
-		std	c\1freq
+		ldx	a,x
+		stx	c\1freq
+	if \1 == 1
+		ldx	#fstable+128
+c\1softtp	equ	*+1
+		adda	#0
+		ldx	a,x
+		stx	c\1sfreq
+	endif
 c\1nonote
 
 		endm
@@ -325,6 +336,12 @@ setarp_c\1	pulu	a,x
 		jmp	c\1nextbyte
 		endm
 
+setsofttp_c	macro
+setsofttp_c\1	pulu	a
+		lsla
+		sta	c\1softtp
+		jmp	c\1nextbyte
+		endm
 
 		rest_c		1
 		rest_c		2
@@ -362,6 +379,7 @@ setarp_c\1	pulu	a,x
 		setport16_c	1
 		setport16_c	2
 		setport16_c	3
+		setsofttp_c	1
 
 
 silence		equ	$00
@@ -380,7 +398,7 @@ return		equ	$18
 setarp		equ	$1a
 clrarp		equ	$1c
 setport16	equ	$1e
-
+setsofttp	equ	$20
 
 jumptable_c	macro
 jumptable_c\1
@@ -400,6 +418,9 @@ jumptable_c\1
 		fdb	setarp_c\1
 		fdb	clrarp_c\1
 		fdb	setport16_c\1
+	if \1 == 1
+		fdb	setsofttp_c\1
+	endif
 		endm
 
 		jumptable_c	1
@@ -437,7 +458,7 @@ start
 		lda	#player_dp
 		tfr	a,dp
 
-		ldu	#$ff41
+		ldu	#reg_sn76489
 		lda	#$9f
 		sta	,u
 		nop
