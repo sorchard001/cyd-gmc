@@ -1,0 +1,2 @@
+#! /bin/bash
+xroar -cart gmc -no-cart-autorun cyd_gmc.bin

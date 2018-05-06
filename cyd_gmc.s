@@ -15,7 +15,10 @@ reg_sn76489	equ	$ff41
 ; -----------------------------------------------------------------------
 		org	$e00
 
+; frequency lookup table for sn76489
 ftable		include	"ftable.s"
+
+; frequency lookup table for soft waves
 fstable		include	"ftable_s.s"
 
 ; -----------------------------------------------------------------------
@@ -40,6 +43,8 @@ c\1loop		fcb	0
 		chan_vars	1
 		chan_vars	2
 		chan_vars	3
+
+soft_wave_ena	fcb	0
 
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -69,6 +74,8 @@ c\1env_r	equ	*+1
 
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+		ldx	#reg_sn76489
+
 chan_write_hw	macro
 c\1freq		equ	*+1
 		ldd	#1
@@ -77,61 +84,88 @@ c\1freq		equ	*+1
 		lsrb
 		lsrb
 		orb	#\2
-		stb	reg_sn76489
+		stb	,x	;reg_sn76489
 		anda	#$3f
 		ldb	#16
-		sta	reg_sn76489
+		sta	,x	;reg_sn76489
 c\1wavevol	equ	*+1
 		subb	#1
-	if \1 == 1
-		stb	c1vol
-	else
+	if \1 <= 2
+		lda	soft_wave_ena
+		beq	1f
+		orb	#$f0
+		stb	c\1svol
+		bra	2f
+1
+	endif
 		andb	#15
 		orb	#\3
-		stb	reg_sn76489
-	endif
+		stb	,x	;reg_sn76489
+2
 		endm
 
 		chan_write_hw	1,$80,$90
 		chan_write_hw	2,$a0,$b0
 		chan_write_hw	3,$c0,$f0
 
-1
-c1phase		equ	*+1
+; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+; Modulate tone generators with variable-duty square wave
+
+chan_soft_wave	macro
+c\1sphase	equ	*+1
 		ldd	#0		; 3
-c1sfreq		equ	*+1
+c\1sfreq	equ	*+1
 		addd	#0		; 4
-		std	c1phase		; 5
-c1duty		equ	*+1
+		std	c\1sphase	; 5
+c\1sduty	equ	*+1
 		adda	#$30		; 2
 		rorb			; 2
 		sex			; 2
-c1vol		equ	*+1
+c\1svol		equ	*+1
 		ora	#0		; 2
-		anda	#$f		; 2
-		ora	#$90		; 2
-		sta	reg_sn76489	; 5
-
-		lda	$ff03		; 5
-		bpl	1b		; 3 (37)
-		lda	$ff02
+		anda	#\2		; 2
+		sta	,x		; 4 (26)
+		endm
 
 
-		lda	c1duty
-c1duty_rate	equ	*+1
-		adda	#1
-c1duty_cond1	equ	*+1
-		cmpa	#$60
+		lda	soft_wave_ena
+		beq	2f
+
+		ldu	#$ff03
+
+1		chan_soft_wave	1,$9f	; 26
+		chan_soft_wave	2,$bf	; 26
+		lda	,u		; 4
+		bpl	1b		; 3 (59)
+		lda	-1,u
+2
+
+; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+; Vary duty by bouncing it between two limits
+
+chan_duty	macro
+		lda	c\1sduty
+c\1duty_rate	equ	*+1
+		adda	#\1
+c\1duty_cond1	equ	*+1
+		cmpa	#$40
 		bls	2f
-		neg	c1duty_rate
-c1duty_cond2	equ	*+1
+		neg	c\1duty_rate
+c\1duty_cond2	equ	*+1
 		ldd	#$0424
-		ldx	c1duty_cond1
-		stx	c1duty_cond2
-		std	c1duty_cond1
+		ldx	c\1duty_cond1
+		stx	c\1duty_cond2
+		std	c\1duty_cond1
 		bra	1f
-2		sta	c1duty
+2		sta	c\1sduty
 1
+		endm
+
+
+		chan_duty	1
+		chan_duty	2
 
 ; - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -216,7 +250,7 @@ c\1arptime	equ	*+1
 		ldx	#ftable+128
 		ldx	a,x
 		stx	c\1freq
-	if \1 == 1
+	if \1 <= 2
 		ldx	#fstable+128
 c\1softtp	equ	*+1
 		adda	#0
@@ -343,6 +377,12 @@ setsofttp_c\1	pulu	a
 		jmp	c\1nextbyte
 		endm
 
+setsoftwave_c	macro
+setsoftwave_c\1	pulu	a
+		sta	soft_wave_ena
+		jmp	c\1nextbyte
+		endm
+
 		rest_c		1
 		rest_c		2
 		rest_c		3
@@ -379,7 +419,11 @@ setsofttp_c\1	pulu	a
 		setport16_c	1
 		setport16_c	2
 		setport16_c	3
+		setsoftwave_c	1
+		setsoftwave_c	2
+		setsoftwave_c	3
 		setsofttp_c	1
+		setsofttp_c	2
 
 
 silence		equ	$00
@@ -398,7 +442,8 @@ return		equ	$18
 setarp		equ	$1a
 clrarp		equ	$1c
 setport16	equ	$1e
-setsofttp	equ	$20
+setsoftwave	equ	$20
+setsofttp	equ	$22
 
 jumptable_c	macro
 jumptable_c\1
@@ -418,7 +463,8 @@ jumptable_c\1
 		fdb	setarp_c\1
 		fdb	clrarp_c\1
 		fdb	setport16_c\1
-	if \1 == 1
+		fdb	setsoftwave_c\1
+	if \1 <= 2
 		fdb	setsofttp_c\1
 	endif
 		endm
@@ -490,13 +536,19 @@ start
 
 
 1		jsr	play_frag
-		bra	1B
+		lda	soft_wave_ena	;
+		bne	1b		; soft wave uses 100% cpu
+2		lda	$ff03		; else wait for vsync
+		bpl	2b
+		lda	$ff02
+		bra	1b
 
 null_arp	fcb	0
 
 ; Test tune
 
-		include	"music.s"
+		;include	"music.s"
+		include	"demo2.s"
 
 tune_table	fdb tune0_c1,tune0_c2,tune0_c3	; tune 0
 
